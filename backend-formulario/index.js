@@ -26,42 +26,56 @@ const pool = new Pool({
 
 // Función para inicializar la base de datos (crear tabla si no existe)
 async function initializeDb() {
+  let client;
   try {
-    const client = await pool.connect();
+    client = await pool.connect();
+    // CAMBIADO: Nombre de la tabla de 'pacientes' a 'registros'
     await client.query(`
-      CREATE TABLE IF NOT EXISTS pacientes (
+      CREATE TABLE IF NOT EXISTS registros (
         id SERIAL PRIMARY KEY,
         nombre_apellido VARCHAR(255) NOT NULL,
         edad INTEGER NOT NULL,
         sexo VARCHAR(50) NOT NULL,
         ejercicio VARCHAR(255) NOT NULL,
-        fecha_hora TIMESTAMP WITH TIME ZONE NOTALL
+        fecha_hora TIMESTAMP WITH TIME ZONE NOT NULL
       );
     `);
-    client.release();
-    console.log('Tabla "pacientes" verificada/creada exitosamente.');
+    console.log('Tabla "registros" verificada/creada exitosamente.');
   } catch (err) {
     console.error('Error al inicializar la base de datos:', err);
+    // Es crucial que la aplicación no continúe si la DB no se inicializa
+    process.exit(1); // Sale de la aplicación si no se puede inicializar la DB
+  } finally {
+    if (client) {
+      client.release();
+    }
   }
 }
 
 // Llama a la función de inicialización al iniciar el servidor
-initializeDb();
+// Aseguramos que la DB se inicialice antes de que el servidor empiece a escuchar
+initializeDb().then(() => {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`Servidor escuchando en puerto ${PORT}`);
+  });
+});
 
 // Ruta que recibe datos del formulario
-// CAMBIADO: La ruta ahora es '/enviar-datos' para coincidir con el frontend
 app.post('/enviar-datos', async (req, res) => {
-  // CAMBIADO: Nombres de campos para coincidir con el frontend
   const { nombreApellido, edad, sexo, ejercicio, fechaHora } = req.body;
   console.log('Datos del formulario recibidos:', req.body);
 
+  let client; // Declara client aquí para que esté disponible en finally
   try {
+    client = await pool.connect(); // Obtiene un cliente de la pool
     // Guardar en la base de datos
-    // CAMBIADO: Nombres de columnas y número de parámetros para coincidir con la tabla 'pacientes'
-    await pool.query(
-      'INSERT INTO pacientes (nombre_apellido, edad, sexo, ejercicio, fecha_hora) VALUES ($1, $2, $3, $4, $5)',
+    // CAMBIADO: Nombre de la tabla de 'pacientes' a 'registros'
+    await client.query(
+      'INSERT INTO registros (nombre_apellido, edad, sexo, ejercicio, fecha_hora) VALUES ($1, $2, $3, $4, $5)',
       [nombreApellido, edad, sexo, ejercicio, fechaHora]
     );
+    client.release(); // Libera el cliente de vuelta a la pool
 
     // Avisar a la ESP32
     // Asegúrate de que esta IP sea la correcta para tu ESP32
@@ -70,13 +84,9 @@ app.post('/enviar-datos', async (req, res) => {
     res.json({ mensaje: 'Formulario recibido, datos guardados y ESP32 activada.' });
   } catch (err) {
     console.error('Error en el servidor:', err);
-    // Enviar una respuesta JSON de error
+    if (client) {
+      client.release(); // Asegura que el cliente se libere incluso en caso de error
+    }
     res.status(500).json({ mensaje: `Error al guardar o activar ESP32: ${err.message}` });
   }
-});
-
-// El puerto debe ser el proporcionado por Railway en la variable de entorno PORT
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Servidor escuchando en puerto ${PORT}`);
 });
