@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS ejercicios (
+  id SERIAL PRIMARY KEY,
+  nombre TEXT NOT NULL,
+  ejercicio TEXT NOT NULL,
+  fecha TIMESTAMP NOT NULL
+);
