@@ -9,7 +9,7 @@ app.use(express.json())
 
 // PostgreSQL config (usa variables de entorno en Railway)
 const pool = new Pool({
-  connectionString: postgresql://postgres:rRomCPOCtDNtMVqNmJCwgpPGRRNzxfBE@caboose.proxy.rlwy.net:52156/railway,
+  connectionString: "postgresql://postgres:rRomCPOCtDNtMVqNmJCwgpPGRRNzxfBE@caboose.proxy.rlwy.net:52156/railway",
   ssl: {
     rejectUnauthorized: false
   }
