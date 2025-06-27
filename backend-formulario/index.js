@@ -9,7 +9,7 @@ app.use(express.json())
 
 // PostgreSQL config (usa variables de entorno en Railway)
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: postgresql://postgres:rRomCPOCtDNtMVqNmJCwgpPGRRNzxfBE@caboose.proxy.rlwy.net:52156/railway,
   ssl: {
     rejectUnauthorized: false
   }
@@ -28,7 +28,7 @@ app.post('/formulario', async (req, res) => {
     )
 
     // Avisar a la ESP32
-    await axios.get('http://IP_DE_TU_ESP32/activar') // Cambiar por IP real
+    await axios.get('http://192.168.1.29/activar') // Cambiar por IP real
 
     res.send('Formulario recibido, datos guardados y ESP32 activada.')
   } catch (err) {
