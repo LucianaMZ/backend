@@ -1,7 +1,7 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "main": "index.js", // o el archivo que uses
+  "main": "index.js", 
   "scripts": {
     "start": "node index.js"
   },
